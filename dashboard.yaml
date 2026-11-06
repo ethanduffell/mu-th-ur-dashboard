@@ -1,0 +1,293 @@
+# MU-TH-UR 6000 dashboard. See README.md. Search for YOUR_ and the entity IDs below and swap in your own.
+views:
+- title: MU-TH-UR
+  path: mother
+  type: sections
+  max_columns: 3
+  background: '#060706'
+  sections:
+  - type: grid
+    column_span: 3
+    cards:
+    - type: markdown
+      content: "# MU-TH-UR\n\n### 6000\n\n<img src=\"/local/mother-logo.png\" alt=\"Logo\">\n\n{% set zha = integration_entities('zha') | select('is_state','unavailable') | map('device_id') | reject('none') | unique | list | count -%}\n{% set cams = ['camera.front_door','camera.garden','camera.hall'] | select('is_state','unavailable') | list | count -%}\n{% set faults = zha + cams + (1 if is_state('binary_sensor.YOUR_WAN_STATUS','off') else 0) -%}\nHOUSE SYSTEMS INTERFACE // {{ now().strftime('%a %d %b %Y').upper() }} // {{ now().strftime('%H:%M') }}  \n{# EDIT THIS LIST: ('NAME TO SHOW', 'person.entity') #}\n{% set crew = [('DALLAS','person.dallas'),('KANE','person.kane'),('RIPLEY','person.ripley'),('LAMBERT','person.lambert')] -%}\n{% set ns = namespace(on=[], off=[]) -%}\n{% for n, e in crew %}{% if is_state(e,'home') %}{% set ns.on = ns.on + [n] %}{% else %}{% set ns.off = ns.off + [n] %}{% endif %}{% endfor -%}\nCREW STATUS.......... {{ ns.on | count }}/{{ crew | count }} ABOARD{{ (': ' ~ ns.on | join(', ')) if ns.on else '' }}{{ (' // **OFF-SHIP: ' ~ ns.off | join(', ') ~ '**') if ns.off else '' }}  \nSYSTEM STATUS........ {{ 'ALL SYSTEMS NOMINAL' if faults == 0 else '**' ~ faults ~ ' FAULT(S) DETECTED**' }}  \n&gt; INTERFACE READY FOR INQUIRY"
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h1{font-size:58px !important;font-weight:700;letter-spacing:5px;color:#39f03c !important;text-align:center;line-height:1;margin:6px 0 8px;text-shadow:0 0 8px rgba(57,240,60,.7),2px 0 0 rgba(57,240,60,.35)}h3{display:table;margin:0 auto 12px;background:#39f03c;color:#0e100e !important;font-size:26px;font-weight:700;letter-spacing:10px;padding:2px 8px 2px 18px;line-height:1.2;text-shadow:none;box-shadow:0 0 10px rgba(57,240,60,.6)}img{display:block;margin:2px auto 14px;width:62%;max-width:360px;height:auto;filter:drop-shadow(0 0 5px rgba(57,240,60,.55))}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}p:last-child::after{content:''█'';margin-left:6px;animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h1{font-size:58px !important;font-weight:700;letter-spacing:5px;color:#39f03c !important;text-align:center;line-height:1;margin:6px 0 8px;text-shadow:0 0 8px rgba(57,240,60,.7),2px 0 0 rgba(57,240,60,.35)}h3{display:table;margin:0 auto 12px;background:#39f03c;color:#0e100e !important;font-size:26px;font-weight:700;letter-spacing:10px;padding:2px 8px 2px 18px;line-height:1.2;text-shadow:none;box-shadow:0 0 10px rgba(57,240,60,.6)}img{display:block;margin:2px auto 14px;width:62%;max-width:360px;height:auto;filter:drop-shadow(0 0 5px rgba(57,240,60,.55))}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}p:last-child::after{content:''█'';margin-left:6px;animation:blink 1s steps(1) infinite}@keyframes blink{50%{opacity:0}}'
+      grid_options:
+        columns: 18
+    - type: markdown
+      content: "## [ ATTENTION REQUIRED ]\n\n{% macro row(l, v) -%}{{ l }}{{ '.' * (14 - l|length) }} {{ v }}  {% endmacro -%}\n{% set cams = {'camera.front_door':'FRONT DOOR','camera.garden':'GARDEN','camera.hall':'HALL'} -%}\n{% set f = namespace(l=[]) -%}\n{% if is_state('binary_sensor.YOUR_WAN_STATUS','off') %}{% set f.l = f.l + [row('UPLINK', 'INTERNET CONNECTION LOST')] %}{% endif -%}\n{% for e, n in cams.items() if is_state(e,'unavailable') %}{% set f.l = f.l + [row('CAMERA', n ~ ' OFFLINE')] %}{% endfor -%}\n{% for i in integration_entities('zha') | select('is_state','unavailable') | map('device_id') | reject('none') | unique %}{% set f.l = f.l + [row('ZIGBEE', (device_attr(i,'name_by_user') or device_attr(i,'name')) | upper ~ ' SILENT')] %}{% endfor -%}\n{# battery sensors you do not care about go in this list #}\n{% set ignore = [] -%}\n{% set a = namespace(l=[]) -%}\n{% for s in states.sensor if s.entity_id not in ignore and s.attributes.device_class is defined and s.attributes.device_class == 'battery' and s.state | is_number and s.state | float < 25 %}{% set a.l = a.l + [row('BATTERY', s.name | replace(' Battery','') | upper ~ ' ' ~ (s.state | float | round(0) | int) ~ '%')] %}{% endfor -%}\n{% for s in states.binary_sensor if s.entity_id not in ignore and s.attributes.device_class is defined and s.attributes.device_class == 'battery' and s.state == 'on' %}{% set a.l = a.l + [row('BATTERY', s.name | replace(' Battery','') | upper ~ ' LOW')] %}{% endfor -%}\n{% for s in states.update | selectattr('state','eq','on') %}{% set a.l = a.l + [row('UPDATE', s.name | replace(' Firmware','') | upper ~ ' ' ~ (s.attributes.latest_version or ''))] %}{% endfor -%}\n{% for s in states.automation | selectattr('state','eq','unavailable') %}{% set a.l = a.l + [row('AUTOMATION', s.name | upper ~ ' BROKEN')] %}{% endfor -%}\n{% if states('sensor.system_monitor_disk_usage') | float(0) > 80 %}{% set a.l = a.l + [row('STORAGE', states('sensor.system_monitor_disk_usage') ~ '% FULL')] %}{% endif -%}\n{% if states('sensor.system_monitor_processor_temperature') | float(0) > 75 %}{% set a.l = a.l + [row('CORE TEMP', states('sensor.system_monitor_processor_temperature') ~ 'C HIGH')] %}{% endif -%}\n<em>&gt; FAULTS ({{ f.l | count }})</em>  \n{% for l in f.l %}**{{ l }}**  \n{% else %}NONE  \n{% endfor %}\n<em>&gt; ADVISORIES ({{ a.l | count }})</em>  \n{% for l in a.l %}{{ l }}  \n{% else %}NONE  \n{% endfor %}"
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+      grid_options:
+        columns: 18
+    - type: markdown
+      content: "## [ NAVIGATION // USCSS NOSTROMO 180924609 ]\n\n{% macro row(l, v) -%}{{ l }}{{ '.' * (19 - l|length) }} {{ v }}  {% endmacro -%}\n{% set secs = now().hour * 3600 + now().minute * 60 -%}\n{% set rng = ((86400 - secs) * 4.7 + 1350) | int -%}\n{% set day = ((as_timestamp(now()) - as_timestamp('2026-01-01T00:00:00+00:00')) / 86400) | int + 1 -%}\n{% set lightyr = 39.17 - day * 0.0003 -%}\n<table><tr><td>\n{{ row('VESSEL', 'USCSS NOSTROMO') }}<br>\n{{ row('CLASS', 'M-CLASS STARFREIGHTER') }}<br>\n{{ row('CARGO', '20,000,000 TONNES ORE') }}<br>\n{{ row('ORIGIN', 'THEDUS') }}<br>\n{{ row('DESTINATION', 'EARTH') }}<br>\n{{ row('SHIP DATE', now().strftime('%d %b').upper() ~ ' 2122') }}\n</td><td>\n{{ row('POSITION', 'ZETA II RETICULI') }}<br>\n{{ row('DIST. FROM EARTH', '%.2f'|format(lightyr) ~ ' LY') }}<br>\n{{ row('RANGE TO LV-426', '{:,}'.format(rng) ~ ' KM') }}<br>\n{{ row('ETA EARTH', '10 MONTHS (REVISED)') }}<br>\n{{ row('CREW', '7 // REVIVED') }}<br>\n{{ row('MISSION DAY', day) }}\n</td></tr></table>\n\n<em>&gt; CURRENT DIRECTIVE // PRIORITY ONE</em>  \n**COURSE DIVERTED. INVESTIGATE TRANSMISSION OF UNKNOWN ORIGIN DETECTED ON LV-426.**  \nCONTRACT CLAUSE IN FORCE: ALL SIGNALS OF POSSIBLE INTELLIGENT ORIGIN MUST BE INVESTIGATED. CREW SHARES FORFEIT ON NON-COMPLIANCE.  \n&gt; PREPARE FOR ATMOSPHERIC DESCENT"
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}table,tr,td,th,tbody{border:none !important;background:transparent !important}table{width:100%;border-collapse:collapse;margin:0 0 10px}td{vertical-align:top;width:50%;padding:0 16px 0 0;font-size:17px;line-height:1.5;color:#39f03c;font-family:''Courier Prime'',monospace !important}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}table,tr,td,th,tbody{border:none !important;background:transparent !important}table{width:100%;border-collapse:collapse;margin:0 0 10px}td{vertical-align:top;width:50%;padding:0 16px 0 0;font-size:17px;line-height:1.5;color:#39f03c;font-family:''Courier Prime'',monospace !important}'
+      grid_options:
+        columns: full
+  - type: grid
+    cards:
+    - type: custom:mother-tracker-card
+      title: '[ SCANNER // GARDEN ]'
+      entity: binary_sensor.garden_person_detection
+      motion: binary_sensor.garden_motion
+      camera: camera.garden
+      range: 20
+      grid_options:
+        columns: 12
+        rows: 6
+  - type: grid
+    cards:
+    - type: markdown
+      content: |-
+        ## [ MOTION TRACKER ]
+
+        {% macro row(l, v) -%}{{ l }}{{ '.' * (21 - l|length) }} {{ v }}  {% endmacro -%}
+        {% macro m(e) -%}{% set s = states(e) %}{{ '**MOVEMENT**' if s == 'on' else ('CLEAR' if s == 'off' else '<em>NO SIGNAL</em>') }}{%- endmacro -%}
+        {{ row('GALLEY/KITCHEN', m('binary_sensor.kitchen_motion')) }}
+        {{ row('MESS/DINING', m('binary_sensor.dining_room_motion')) }}
+        {{ row('LOUNGE/LIVING', m('binary_sensor.living_room_motion')) }}
+        {{ row('REC DECK/PLAYROOM', m('binary_sensor.playroom_motion')) }}
+        {{ row('CORRIDOR/HALL', m('binary_sensor.hall_motion')) }}
+        {{ row('AIRLOCK/FRONT', m('binary_sensor.front_door_motion')) }}
+        {{ row('HULL AFT/GARDEN', m('binary_sensor.garden_motion')) }}
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+  - type: grid
+    cards:
+    - type: custom:mother-tracker-card
+      title: '[ SCANNER // FRONT ]'
+      entity: binary_sensor.front_person_detection
+      motion: binary_sensor.front_door_motion
+      camera: camera.front_door
+      range: 20
+      grid_options:
+        columns: 12
+        rows: 6
+  - type: grid
+    cards:
+    - type: markdown
+      content: |-
+        ## [ HULL INTEGRITY ]
+
+        {% macro row(l, v) -%}{{ l }}{{ '.' * (21 - l|length) }} {{ v }}  {% endmacro -%}
+        {% set cams = ['camera.front_door','camera.garden','camera.hall'] -%}
+        {% set up = cams | reject('is_state','unavailable') | list | count -%}
+        {% set d = states('binary_sensor.front_door_sensor_opening') -%}
+        {{ row('FRONT AIRLOCK', '**OPEN**' if d == 'on' else ('SEALED' if d == 'off' else '<em>NO SIGNAL</em>')) }}
+        {{ row('DEFENCE GRID', states('alarm_control_panel.home_alarm') | replace('_',' ') | upper) }}
+        {{ row('CAMERAS', (up ~ '/' ~ cams|count ~ ' ONLINE') if up == cams|count else ('**' ~ up ~ '/' ~ cams|count ~ ' ONLINE**')) }}
+        {{ row('LIFEFORM/FRONT', '**DETECTED**' if is_state('binary_sensor.front_person_detection','on') else 'NONE') }}
+        {{ row('LIFEFORM/GARDEN', '**DETECTED**' if is_state('binary_sensor.garden_person_detection','on') else 'NONE') }}
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+    - type: tile
+      entity: alarm_control_panel.home_alarm
+      name: DEFENCE GRID
+      color: green
+      grid_options:
+        columns: 12
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      features:
+      - type: alarm-modes
+        modes:
+        - armed_away
+        - disarmed
+  - type: grid
+    cards:
+    - type: markdown
+      content: |-
+        ## [ DECK LIGHTING ]
+
+        <em>TAP A DECK TO TOGGLE</em>
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}em{color:#26a82a;font-style:normal}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}em{color:#26a82a;font-style:normal}'
+    - type: tile
+      entity: light.kitchen
+      name: GALLEY / KITCHEN
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+    - type: tile
+      entity: light.dining_room
+      name: MESS / DINING
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+    - type: tile
+      entity: light.living_room
+      name: LOUNGE / LIVING
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+    - type: tile
+      entity: light.hall
+      name: CORRIDOR / HALL
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+    - type: tile
+      entity: light.playroom
+      name: REC DECK / PLAYROOM
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+    - type: tile
+      entity: light.neon_sign
+      name: BEACON / NEON
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+    - type: tile
+      entity: light.front_of_house
+      name: EXTERIOR / FRONT
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+    - type: tile
+      entity: switch.garden_lights
+      name: EXTERIOR / GARDEN
+      color: green
+      grid_options:
+        columns: 6
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: toggle
+      icon: mdi:outdoor-lamp
+    - type: button
+      name: PURGE ALL DECK LIGHTING
+      icon: mdi:alert-octagon-outline
+      icon_height: 28px
+      show_state: false
+      grid_options:
+        columns: 12
+        rows: 2
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#ffd35d;--state-icon-color:#ffd35d;background:#0c0a02 !important;border:1px solid #8a6a1f !important;border-radius:0 !important;box-shadow:0 0 14px rgba(255,211,93,.15) !important;color:#ffd35d !important;font-family:''Courier Prime'',monospace !important;font-size:17px;letter-spacing:1px;text-shadow:0 0 6px rgba(255,211,93,.6);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      tap_action:
+        action: perform-action
+        perform_action: homeassistant.turn_off
+        confirmation:
+          text: 'MOTHER: CONFIRM PURGE OF ALL DECK LIGHTING?'
+        target:
+          entity_id:
+          - light.kitchen
+          - light.dining_room
+          - light.living_room
+          - light.hall
+          - light.playroom
+          - light.neon_sign
+          - light.front_of_house
+          - switch.garden_lights
+  - type: grid
+    cards:
+    - type: markdown
+      content: |-
+        ## [ LIFE SUPPORT ]
+
+        {% macro row(l, v) -%}{{ l }}{{ '.' * (21 - l|length) }} {{ v }}  {% endmacro -%}
+        {% macro t(e) -%}{% if states(e) in ['unavailable','unknown'] %}<em>NO SIGNAL</em>{% else %}{{ state_attr(e,'current_temperature') }}C / {{ state_attr(e,'hvac_action') | default('idle', true) | upper }}{% endif %}{%- endmacro -%}
+        {% set h = 'climate.heating' -%}
+        {{ row('INTERNAL ATMOS', state_attr(h,'current_temperature') ~ 'C') }}
+        {{ row('TARGET', state_attr(h,'temperature') ~ 'C') }}
+        {{ row('HUMIDITY', (state_attr(h,'current_humidity') | float(0) | round(0) | int) ~ '%') }}
+        {{ row('HEAT PLANT', state_attr(h,'hvac_action') | default('idle', true) | upper) }}
+        {{ row('EXTERNAL ATMOS', state_attr('weather.home','temperature') ~ 'C ' ~ states('weather.home') | replace('partlycloudy','partly cloudy') | replace('-',' ') | upper) }}
+        {{ row('CABIN/1', t('climate.bedroom_1')) }}
+        {{ row('CABIN/2', t('climate.bedroom_2')) }}
+        {{ row('REC DECK/PLAYROOM', t('climate.playroom')) }}
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+    - type: tile
+      entity: climate.heating
+      name: MAIN HEAT PLANT
+      color: green
+      grid_options:
+        columns: 12
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      features:
+      - type: target-temperature
+  - type: grid
+    cards:
+    - type: markdown
+      content: |-
+        ## [ COMMS ARRAY ]
+
+        {% macro row(l, v) -%}{{ l }}{{ '.' * (21 - l|length) }} {{ v }}  {% endmacro -%}
+        {% set p = 'media_player.living_room_speaker' -%}
+        {{ row('CHANNEL', 'LIVING ROOM') }}
+        {{ row('STATUS', states(p) | upper) }}
+        {% if state_attr(p,'media_title') -%}
+        {{ row('SIGNAL', state_attr(p,'media_title') | upper) }}
+        {{ row('ORIGIN', state_attr(p,'media_artist') | default('unknown', true) | upper) }}
+        {%- endif %}
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+    - type: tile
+      entity: media_player.living_room_speaker
+      name: LIVING ROOM
+      color: green
+      grid_options:
+        columns: 12
+      card_mod:
+        style: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;font-family:''Courier Prime'',monospace !important;font-size:18px;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}'
+      features:
+      - type: media-player-playback
+      - type: media-player-volume-slider
+  - type: grid
+    cards:
+    - type: markdown
+      content: "## [ MAIN COMPUTER ]\n\n{% macro row(l, v) -%}{{ l }}{{ '.' * (21 - l|length) }} {{ v }}  {% endmacro -%}\n{% set ids = integration_entities('zha') | select('is_state','unavailable') | map('device_id') | reject('none') | unique | list -%}\n{{ row('CPU LOAD', states('sensor.system_monitor_processor_use') ~ '%') }}\n{{ row('MEMORY', states('sensor.system_monitor_memory_usage') ~ '%') }}\n{{ row('STORAGE', states('sensor.system_monitor_disk_usage') ~ '%') }}\n{{ row('CORE TEMP', (states('sensor.system_monitor_processor_temperature') | float(0) | round(0) | int) ~ 'C') }}\n{{ row('ONLINE FOR', relative_time(as_datetime(states('sensor.system_monitor_uptime'))) | upper) }}\n{{ row('UPLINK', 'ESTABLISHED' if is_state('binary_sensor.YOUR_WAN_STATUS','on') else '**LOST**') }}\n{{ row('REMOTE LINK', 'ACTIVE' if is_state('binary_sensor.remote_ui','on') else '**OFFLINE**') }}\n{{ row('ZIGBEE FAULTS', 'NONE' if ids | count == 0 else '**' ~ ids | count ~ ' DEVICE(S) SILENT**') }}\n{% for i in ids %}<em>&gt; {{ (device_attr(i,'name_by_user') or device_attr(i,'name')) | upper }}</em>  \n{% endfor %}"
+      card_mod:
+        style:
+          .: 'ha-card{--ha-font-family-body:''Courier Prime'',monospace;--ha-font-family-heading:''Courier Prime'',monospace;--mdc-typography-font-family:''Courier Prime'',monospace;--primary-text-color:#39f03c;--secondary-text-color:#26a82a;--primary-color:#39f03c;--state-icon-color:#39f03c;--state-inactive-color:#2bc42e;background:#0e100e !important;border:3px solid #2bc42e !important;border-radius:0 !important;box-shadow:0 0 14px rgba(57,240,60,.18),inset 0 0 40px rgba(57,240,60,.06) !important;color:#39f03c !important;font-family:''Courier Prime'',monospace !important;letter-spacing:0;text-shadow:0 0 3px rgba(57,240,60,.55),1px 0 0 rgba(57,240,60,.25);position:relative;overflow:hidden}ha-card::after{content:'''';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px)}*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
+          ha-markdown $: '*{font-family:''Courier Prime'',monospace !important}h2{color:#8dff8d;font-size:20px;font-weight:700;letter-spacing:1px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #2bc42e}p{margin:0;font-size:17px;line-height:1.5}strong{color:#ffd35d;font-weight:400;text-shadow:0 0 6px rgba(255,211,93,.7)}em{color:#26a82a;font-style:normal}'
